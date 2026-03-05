@@ -13,7 +13,7 @@ namespace TrafficJam.Gameplay
         public CarDataSO carData;
 
         // tr: Performans optimizasyonu: Waypoint geçişlerinde mesafeyi hesaplarken kullanacağımız hata payı.
-        private const float DistanceThreshold = 0.1f;
+        private const float DistanceThreshold = 0.2f;
 
         private List<Transform> waypoints;
         private int currentWaypointIndex = 0;
@@ -21,23 +21,25 @@ namespace TrafficJam.Gameplay
 
         private void OnEnable()
         {
-            // tr: Object Pool'dan obje aktif edildiğinde rotayı sıfırlıyoruz.
             currentWaypointIndex = 0;
+            isMoving = false;
             
-            // tr: Rotayı PathManager'dan alıyoruz. Eğer henüz PathManager veya rota yoksa hareket başlamaz.
-            if (PathManager.Instance != null)
-            {
-                waypoints = PathManager.Instance.GetWaypoints();
-                if (waypoints.Count > 0)
-                {
-                    // tr: Arabayı ilk noktanın (başlangıç çizgisinin) pozisyonuna ışınla.
-                    transform.position = waypoints[0].position;
-                    // tr: İlk noktadan sonraki noktaya doğru yönelt.
-                    if (waypoints.Count > 1) transform.LookAt(waypoints[1]);
-                    
-                    isMoving = true;
-                }
+            // tr: Rotayı PathManager'dan alıyoruz. Fail-Safe kontrol.
+            if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0) 
+            { 
+                 gameObject.SetActive(false); 
+                 return; 
             }
+
+            waypoints = PathManager.Instance.GetWaypoints();
+            
+            // tr: Arabayı doğrudan ilk noktanın (başlangıç çizgisinin) pozisyonuna ışınla.
+            transform.position = waypoints[0].position;
+            
+            // tr: İlk noktadan sonraki noktaya doğru yönelt.
+            if (waypoints.Count > 1) transform.LookAt(waypoints[1]);
+            
+            isMoving = true;
         }
 
         private void Update()
@@ -80,16 +82,14 @@ namespace TrafficJam.Gameplay
 
         private void CompleteLap()
         {
+            Debug.Log("[CarAgent] tr: Araç turu tamamladı, havuza dönüyor ve para kazandırıyor.");
+            
             // tr: Aracın kazandırdığı parayı EconomyManager'a ve diğer sistemlere bildir.
             EventManager.OnCarCompletedLap?.Invoke(carData.incomePerLap);
 
-            // tr: Döngüyü başa sarıp aracın yolda kalmasını sağlıyoruz (Traffic Jam tipi idle mantığı).
-            // İleride aracı despawn edip havuzda bekletme istersen: ObjectPoolManager.Instance.ReturnToPool(carData.poolId, gameObject);
-            currentWaypointIndex = 0;
-            if (waypoints.Count > 0)
-            {
-                transform.position = waypoints[0].position;
-            }
+            // tr: Havuza geri gönder. TrafficManager daha sonra tekrar pull alacak / veya döngü de yapabilirsin.
+            // Kullanıcının isteği: Son waypoint'e ulaşıp ReturnToPool çalıştığında...
+            ObjectPoolManager.Instance.ReturnToPool(carData.poolId, gameObject);
         }
     }
 }

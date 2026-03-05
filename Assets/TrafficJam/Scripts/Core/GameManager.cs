@@ -33,8 +33,9 @@ namespace TrafficJam.Core
 
         private void Start()
         {
-            // tr: Oyun başladığında varsayılan olarak MainMenu durumuna geçebiliriz.
-            ChangeState(GameState.MainMenu);
+            // tr: Şimdilik test aşamasında olduğumuz için doğrudan Playing durumuna geçiyoruz.
+            // İleride UI eklediğimizde burayı tekrar MainMenu yaparız.
+            ChangeState(GameState.Playing);
         }
 
         private void OnDestroy()

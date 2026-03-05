@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5823629ec709824983b1ba765569cec, type: 3}
   m_Name: Level_1_Data
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Data.LevelDataSO
-  currentLevel: 0
-  upgradeCost: 0
-  maxCarCapacity: 0
+  currentLevel: 1
+  upgradeCost: 100
+  maxCarCapacity: 5

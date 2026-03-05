@@ -16,7 +16,7 @@ namespace TrafficJam.Gameplay
         [SerializeField] private LevelDataSO currentLevelData;
         
         // tr: Araçların yola çıkmadan önce ne kadar süre bekleyeceğini (Spawn Rate) belirler.
-        [SerializeField] private float spawnInterval = 1.5f;
+        [SerializeField] private float spawnInterval = .5f;
 
         // tr: Sahnede aktif olan (yolda gezen) araçların listesi. Limit kontrolü için gereklidir.
         private List<GameObject> activeCarsOnRoad = new List<GameObject>();
@@ -55,7 +55,15 @@ namespace TrafficJam.Gameplay
                 // tr: Oyun Playing durumundaysa ve hala yolda eklenebilecek araç kapasitesi varsa araç spawn et.
                 if (GameManager.Instance.CurrentState == GameState.Playing && currentLevelData != null)
                 {
-                    if (activeCarsOnRoad.Count < currentLevelData.maxCarCapacity && PathManager.Instance.GetWaypoints().Count > 0)
+                    // FAIL-SAFE
+                    if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0)
+                    {
+                        Debug.LogError("[TrafficManager] tr: Waypoint listesi BOŞ! Lütfen PathManager'a waypointleri atayın.");
+                        yield return new WaitForSeconds(2f);
+                        continue;
+                    }
+
+                    if (activeCarsOnRoad.Count < currentLevelData.maxCarCapacity)
                     {
                         SpawnCar("Car_Tier1");
                     }
@@ -83,7 +91,7 @@ namespace TrafficJam.Gameplay
                 
                 // tr: Araç başarıyla yola çıktığını global olarak haber ver (örnek: UI'ı güncellemek için).
                 EventManager.OnCarSpawned?.Invoke(car);
-                // Debug.Log($"[TrafficManager] tr: Araç spawn edildi: {poolId}. Yoldaki araç sayısı: {activeCarsOnRoad.Count}");
+                Debug.Log($"[TrafficManager] tr: Araç spawn edildi. Aktif araç sayısı: {activeCarsOnRoad.Count}");
             }
         }
 

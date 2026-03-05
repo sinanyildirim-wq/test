@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 214400035c0fb814ebac5f2be2aaa273, type: 3}
   m_Name: Car_Ties1_Data
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Data.CarDataSO
-  tier: 0
-  carName: 
-  poolId: 
-  incomePerLap: 0
-  baseSpeed: 0
+  tier: 1
+  carName: Sedan
+  poolId: Car_Tier1
+  incomePerLap: 10
+  baseSpeed: 10
