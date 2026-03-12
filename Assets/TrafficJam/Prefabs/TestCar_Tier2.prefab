@@ -13,9 +13,10 @@ GameObject:
   - component: {fileID: 3975693939575967450}
   - component: {fileID: 2243707615327109828}
   - component: {fileID: 5076491764812514951}
-  m_Layer: 0
-  m_Name: TestCar
-  m_TagString: Car
+  - component: {fileID: 4557064041865517559}
+  m_Layer: 6
+  m_Name: TestCar_Tier2
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -89,7 +90,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 8bfaa18768400fa4485eb19e4f3729cc, type: 2}
+  - {fileID: 2100000, guid: 372b0d4488421124db7b42456b886f98, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -125,4 +126,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1d85349024ba7d4ea7d9d4ed2cba864, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Gameplay.CarAgent
-  carData: {fileID: 11400000, guid: 066f5d8682d49944684bf99df58bfbcb, type: 2}
+  carData: {fileID: 11400000, guid: c5bd9b233cab39e45a49e34c1f9ef0c1, type: 2}
+--- !u!65 &4557064041865517559
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5803216708819085969}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

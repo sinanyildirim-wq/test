@@ -9,9 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b5823629ec709824983b1ba765569cec, type: 3}
-  m_Name: Level_2_Data
-  m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Data.LevelDataSO
-  currentLevel: 1
-  upgradeCost: 100
-  maxCarCapacity: 5
+  m_Script: {fileID: 11500000, guid: 214400035c0fb814ebac5f2be2aaa273, type: 3}
+  m_Name: Car_Tier1_Data
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Data.CarDataSO
+  tier: 2
+  carName: SUV
+  poolId: Car_Tier2
+  incomePerLap: 25
+  baseSpeed: 12

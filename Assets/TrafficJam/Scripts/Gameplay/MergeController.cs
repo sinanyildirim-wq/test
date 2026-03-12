@@ -8,8 +8,8 @@ namespace TrafficJam.Gameplay
     public class MergeController : MonoBehaviour
     {
         [Header("Settings")]
-        [SerializeField] private LayerMask carLayer; // tr: Raycast'in hangi layer'daki objeleri yakalayacağını belirler.
-        [SerializeField] private float dragHeight = 1.0f; // tr: Sürükleme sırasında aracın yerden yüksekliği.
+        public LayerMask carLayer; // tr: Raycast'in hangi layer'daki objeleri yakalayacağını belirler.
+        public float dragHeight = 1.0f; // tr: Sürükleme sırasında aracın yerden yüksekliği.
 
         private GameObject draggedObject; // tr: Şu an sürüklenen araç.
         private Vector3 originalPosition; // tr: Sürükleme başarısız olursa geri döneceği pozisyon.
