@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 3975693939575967450}
   - component: {fileID: 2243707615327109828}
   - component: {fileID: 5076491764812514951}
-  - component: {fileID: 4557064041865517559}
   m_Layer: 6
   m_Name: TestCar_Tier1
   m_TagString: Untagged
@@ -127,24 +126,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Gameplay.CarAgent
   carData: {fileID: 11400000, guid: 328315878ba866d4bb57276adb922214, type: 2}
---- !u!65 &4557064041865517559
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5803216708819085969}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}

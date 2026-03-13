@@ -15,6 +15,7 @@ namespace TrafficJam.Gameplay
         private GameObject draggedObject; // tr: Şu an sürüklenen araç.
         private Vector3 originalPosition; // tr: Sürükleme başarısız olursa geri döneceği pozisyon.
         private CarAgent draggedAgent; // tr: Sürüklenen aracın agent bileşeni.
+        private Vector3 dragOffset;
 
         private void Update()
         {
@@ -25,32 +26,41 @@ namespace TrafficJam.Gameplay
 
         private void HandleInput()
         {
-            if (Pointer.current == null) return;
+            // Eğer ortada bir tıklama aygıtı (mouse/parmak) yoksa direkt iptal et.
+            if (Pointer.current == null) return; 
 
-            // tr: Tıklama veya dokunma başladığında.
+            // 1. AN: Parmağın ekrana İLK dokunduğu o kısacık "an" (wasPressedThisFrame)
             if (Pointer.current.press.wasPressedThisFrame)
             {
-                Debug.Log("[MergeController] tr: Ekrana tıklandı, Raycast fırlatılıyor...");
-                StartDragging();
+                // Masadaki kalemi eline aldığın an
+                StartDragging(); // Sürüklemeyi Başlat
             }
             
-            // tr: Tıklama veya dokunma devam ederken ve bir obje tutuluyorsa.
+            // 2. AN: Parmağın ekrana basılı kalmaya "devam ettiği" süreç (isPressed)
+            // VE eğer elimizde bir obje varsa (draggedObject != null)
             if (Pointer.current.press.isPressed && draggedObject != null)
             {
-                UpdateDragging();
+                // Kalemi havada gezdirdiğin an
+                UpdateDragging(); // Sürüklemeyi Güncelle
             }
 
-            // tr: Tıklama veya dokunma bırakıldığında ve bir obje tutuluyorsa.
+            // 3. AN: Parmağını ekrandan "çektiğin" an (wasReleasedThisFrame)
+            // VE elimizde bir obje varsa
             if (Pointer.current.press.wasReleasedThisFrame && draggedObject != null)
             {
-                StopDragging();
+                // Kalemi masaya (ya da başka kalemin üstüne) bıraktığın an
+                StopDragging(); // Sürüklemeyi Durdur
             }
         }
 
         private void StartDragging()
         {
-            Vector2 screenPos = Pointer.current.position.ReadValue();
+            Vector2 screenPos = Pointer.current.position.ReadValue(); 
+            // Oyuncunun telefon camında dokunduğu X,Y noktası (örnek: x:450, y:800 pikseli).
+
             Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            // Kamera, oyuncunun ekranda dokunduğu o 2D piksel noktasından oyunun içine doğru
+            // görünmez düz bir "Ray" (Işın) çizer.
             
             // tr: Raycast'in neye çarptığını görmek için önce carLayer maskesi olmadan bir test yapalım (debug için).
             if (Physics.Raycast(ray, out RaycastHit debugHit, 100f))
@@ -58,7 +68,9 @@ namespace TrafficJam.Gameplay
                 Debug.Log($"[MergeController] tr: Raycast bir şeye çarptı: {debugHit.collider.gameObject.name}, Layer: {LayerMask.LayerToName(debugHit.collider.gameObject.layer)} (Index: {debugHit.collider.gameObject.layer})");
             }
 
-            if (Physics.Raycast(ray, out RaycastHit hit, 100f, carLayer))
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, carLayer)) 
+            //Attığımız sanal lazer (ray) 100 metre ileriye gitsin. Çarptığı şeyleri hit isimli sanal kutuya atsın. AMAA! sadece 
+            // ve sadece carLayer (Araba Katmanı) etiketine sahip nesneleri görsün. Yere veya binalara çarparsa yok say!
             {
                 draggedObject = hit.collider.gameObject;
                 draggedAgent = draggedObject.GetComponent<CarAgent>();
@@ -71,10 +83,16 @@ namespace TrafficJam.Gameplay
                 }
 
                 originalPosition = draggedObject.transform.position;
+                // Arabanın mevcut pozisyonunu hafızaya al.
                 
+                // Tıklanan nokta ile arabanın merkezi arasındaki farkı hafızaya al.
+                dragOffset = draggedObject.transform.position - hit.point; 
+                dragOffset.y = 0; // Y eksenindeki (yükseklik) farkı yoksayalım ki araba düzgün havalansın.
                 Debug.Log($"[MergeController] tr: Araç tutuldu! ID: {draggedAgent.carData.poolId}");
                 
-                // tr: Sürüklenen objeyi görsel olarak biraz yukarı kaldır.
+                //Oyunlarda "Game Feel" (Oyun hissi) denilen şey çok önemlidir. Sen araca tıklandığında anında
+                // DOTween eklentisi kullanarak arabayı 0.2 saniye içerisinde dragHeight (atıyorum 1 metre) 
+                // havaya kaldırıyorsun. Oyuncu şunu algılıyor: "Süper! Arabayı yerden elime aldım ve şu an tutuyorum.
                 draggedObject.transform.DOMoveY(dragHeight, 0.2f);
             }
             else
@@ -92,12 +110,18 @@ namespace TrafficJam.Gameplay
             Vector2 screenPos = Pointer.current.position.ReadValue();
             Ray ray = Camera.main.ScreenPointToRay(screenPos);
             // tr: Yerdeki hayali bir düzleme (Plane) göre pozisyonu güncelle.
+            // Yerden "dragHeight" kadar yüksekte, yüzü yukarı dönük (Vector3.up) görünmez, sonsuz bir masa oluşturduk.
             Plane plane = new Plane(Vector3.up, new Vector3(0, dragHeight, 0));
-            
+
+            // Kameradan parmağımıza doğru fırlattığımız lazer, bu cam masaya (plane) nerede çarpıyor? 
             if (plane.Raycast(ray, out float entry))
             {
-                Vector3 newPos = ray.GetPoint(entry);
-                draggedObject.transform.position = newPos;
+                // Çarptığı o nokta bizim arabamızın 3D dünyadaki yeni koordinatları olacak!
+                Vector3 hitPoint = ray.GetPoint(entry);
+                // YENİ MANTIK: Farenin zeminle kesiştiği yere offset'i ekleyerek pozisyon ver.
+                Vector3 newPos = hitPoint + dragOffset; 
+                newPos.y = dragHeight; // Yüksekliği sabit tut
+                draggedObject.transform.position = newPos; // Arabayı tam o noktaya koy.
             }
         }
 
@@ -182,9 +206,8 @@ namespace TrafficJam.Gameplay
             {
                 // tr: DOTween ile tatlı bir tepki ver.
                 newCar.transform.localScale = Vector3.zero;
+                // DOPunchScale'i siliyoruz, sadece DOScale yeterli ve çok daha pürüzsüzdür.
                 newCar.transform.DOScale(Vector3.one, 0.5f).SetEase(Ease.OutBack);
-                newCar.transform.DOPunchScale(new Vector3(0.2f, 0.2f, 0.2f), 0.5f);
-                
                 // tr: Olayı sistemlere duyur.
                 EventManager.OnCarMerged?.Invoke(nextTier);
             }
