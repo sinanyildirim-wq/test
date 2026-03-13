@@ -1,3 +1,4 @@
+using UnityEngine.InputSystem;
 using UnityEngine;
 using TrafficJam.Core;
 using DG.Tweening;
@@ -24,20 +25,23 @@ namespace TrafficJam.Gameplay
 
         private void HandleInput()
         {
-            // tr: Mouse sol tık veya dokunma başladığında.
-            if (Input.GetMouseButtonDown(0))
+            if (Pointer.current == null) return;
+
+            // tr: Tıklama veya dokunma başladığında.
+            if (Pointer.current.press.wasPressedThisFrame)
             {
+                Debug.Log("[MergeController] tr: Ekrana tıklandı, Raycast fırlatılıyor...");
                 StartDragging();
             }
             
-            // tr: Mouse sol tık veya dokunma devam ederken.
-            if (Input.GetMouseButton(0) && draggedObject != null)
+            // tr: Tıklama veya dokunma devam ederken ve bir obje tutuluyorsa.
+            if (Pointer.current.press.isPressed && draggedObject != null)
             {
                 UpdateDragging();
             }
 
-            // tr: Mouse sol tık veya dokunma bırakıldığında.
-            if (Input.GetMouseButtonUp(0) && draggedObject != null)
+            // tr: Tıklama veya dokunma bırakıldığında ve bir obje tutuluyorsa.
+            if (Pointer.current.press.wasReleasedThisFrame && draggedObject != null)
             {
                 StopDragging();
             }
@@ -45,26 +49,48 @@ namespace TrafficJam.Gameplay
 
         private void StartDragging()
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Vector2 screenPos = Pointer.current.position.ReadValue();
+            Ray ray = Camera.main.ScreenPointToRay(screenPos);
+            
+            // tr: Raycast'in neye çarptığını görmek için önce carLayer maskesi olmadan bir test yapalım (debug için).
+            if (Physics.Raycast(ray, out RaycastHit debugHit, 100f))
+            {
+                Debug.Log($"[MergeController] tr: Raycast bir şeye çarptı: {debugHit.collider.gameObject.name}, Layer: {LayerMask.LayerToName(debugHit.collider.gameObject.layer)} (Index: {debugHit.collider.gameObject.layer})");
+            }
+
             if (Physics.Raycast(ray, out RaycastHit hit, 100f, carLayer))
             {
                 draggedObject = hit.collider.gameObject;
                 draggedAgent = draggedObject.GetComponent<CarAgent>();
-                originalPosition = draggedObject.transform.position;
-
-                // tr: Hareket halindeyken sürüklemeyi durdurmak için agent'ı deaktive edebiliriz veya durumunu değiştirebiliriz.
-                // tr: Şimdilik basitçe transform kontrolünü elimize alıyoruz.
                 
-                Debug.Log($"[MergeController] tr: Sürükleme başladı: {draggedObject.name}");
+                if (draggedAgent == null)
+                {
+                    Debug.LogWarning("[MergeController] tr: Çarpılan obje üzerinde CarAgent bulunamadı!");
+                    draggedObject = null;
+                    return;
+                }
+
+                originalPosition = draggedObject.transform.position;
+                
+                Debug.Log($"[MergeController] tr: Araç tutuldu! ID: {draggedAgent.carData.poolId}");
                 
                 // tr: Sürüklenen objeyi görsel olarak biraz yukarı kaldır.
                 draggedObject.transform.DOMoveY(dragHeight, 0.2f);
+            }
+            else
+            {
+                // tr: Eğer carLayer ile bir şey yakalayamadıysak ama debugHit bir şeye çarptıysa, layer uyuşmazlığı vardır.
+                if (debugHit.collider != null)
+                {
+                    Debug.LogWarning("[MergeController] tr: Çarpılan obje geçerli bir araç değil veya doğru Layer'da değil!");
+                }
             }
         }
 
         private void UpdateDragging()
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Vector2 screenPos = Pointer.current.position.ReadValue();
+            Ray ray = Camera.main.ScreenPointToRay(screenPos);
             // tr: Yerdeki hayali bir düzleme (Plane) göre pozisyonu güncelle.
             Plane plane = new Plane(Vector3.up, new Vector3(0, dragHeight, 0));
             
@@ -77,11 +103,11 @@ namespace TrafficJam.Gameplay
 
         private void StopDragging()
         {
-            Debug.Log($"[MergeController] tr: Sürükleme bırakıldı: {draggedObject.name}");
+            Debug.Log("[MergeController] tr: Araç bırakıldı, altındaki eşleşmeler kontrol ediliyor...");
 
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Vector2 screenPos = Pointer.current.position.ReadValue();
+            Ray ray = Camera.main.ScreenPointToRay(screenPos);
             // tr: Bıraktığımız yerde başka bir araç var mı kontrol et.
-            // tr: draggedObject'in kendi collider'ını IgnoreRaycast yapmaya gerek kalmaması için RaycastAll veya offset kullanabiliriz.
             
             RaycastHit[] hits = Physics.RaycastAll(ray, 100f, carLayer);
             GameObject targetObject = null;
@@ -101,8 +127,8 @@ namespace TrafficJam.Gameplay
             }
             else
             {
-                // tr: Boşluğa bırakıldıysa eski yerine döndür.
-                Debug.Log("[MergeController] tr: Boşluğa bırakıldı, eski pozisyona dönülüyor.");
+                // tr: Boşluk veya uyumsuz yere bırakıldıysa eski yerine döndür.
+                Debug.Log("[MergeController] tr: Boşluk veya uyumsuz yere bırakıldı, eski pozisyona dönülüyor.");
                 draggedObject.transform.DOMove(originalPosition, 0.3f);
             }
 

@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Data.LevelDataSO
   currentLevel: 1
   upgradeCost: 100
-  maxCarCapacity: 10
+  maxCarCapacity: 5
