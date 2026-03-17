@@ -15,5 +15,5 @@ MonoBehaviour:
   tier: 1
   carName: SUV
   poolId: Car_Tier1
-  incomePerLap: 10
+  incomePerLap: 100
   baseSpeed: 3

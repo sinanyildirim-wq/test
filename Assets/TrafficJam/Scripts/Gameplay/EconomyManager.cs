@@ -74,5 +74,40 @@ namespace TrafficJam.Gameplay
                 return false;
             }
         }
+
+        // tr: Level geçişini (upgrade) satın alma mantığı burada toplanır.
+        // UI butonu, tutorial veya başka sistemler bu metodu çağırabilir.
+        public bool TryUpgradeToNextLevel()
+        {
+            if (LevelManager.Instance == null)
+            {
+                Debug.LogError("[EconomyManager] TryUpgradeToNextLevel failed: LevelManager.Instance is null.");
+                return false;
+            }
+
+            if (LevelManager.Instance.CurrentLevelData == null)
+            {
+                Debug.LogError("[EconomyManager] TryUpgradeToNextLevel failed: CurrentLevelData is null.");
+                return false;
+            }
+
+            int cost = LevelManager.Instance.CurrentLevelData.upgradeCost;
+            if (cost <= 0)
+            {
+                Debug.LogWarning("[EconomyManager] upgradeCost <= 0, upgrading for free.");
+                LevelManager.Instance.LoadNextLevel();
+                return true;
+            }
+
+            if (!SpendMoney(cost))
+            {
+                Debug.LogWarning($"[EconomyManager] Not enough money for upgrade. Need={cost}");
+                return false;
+            }
+
+            Debug.Log($"[EconomyManager] Upgrade purchased. Cost={cost}. Loading next level...");
+            LevelManager.Instance.LoadNextLevel();
+            return true;
+        }
     }
 }

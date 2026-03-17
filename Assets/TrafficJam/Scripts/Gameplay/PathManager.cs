@@ -14,7 +14,15 @@ namespace TrafficJam.Gameplay
 
         private void Awake()
         {
-            // tr: Singleton kurulumu.
+            // tr: Bu component 2 farklı amaçla kullanılabilir:
+            // tr: 1) Global PathManager (sahne root'unda) -> Singleton Instance budur.
+            // tr: 2) Level prefabının içinde gömülü PathManager -> sadece waypoint "data holder" olarak durur (singleton OLMAZ).
+
+            // tr: Prefab içindeki PathManager (parent'ı varsa) singleton'a dokunmasın.
+            if (transform.parent != null)
+                return;
+
+            // tr: Global singleton kurulumu.
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
@@ -48,6 +56,15 @@ namespace TrafficJam.Gameplay
                     }
                 }
             }
+        }
+
+        // tr: LevelManager yeni bir harita yüklediğinde bu metodu çağırıp yeni rotayı verir.
+        public void SetWaypoints(List<Transform> newWaypoints)
+        {
+            // tr: Defansif kopya: Prefab içindeki başka bir component'in listesini referans almak riskli.
+            // tr: Environment destroy olunca Unity bazı serialized list referanslarını temizleyebiliyor; bu da runtime'da "no waypoints" hatasına yol açar.
+            waypoints = newWaypoints == null ? new List<Transform>() : new List<Transform>(newWaypoints);
+            Debug.Log($"[PathManager] Waypoints updated. Count={(waypoints == null ? 0 : waypoints.Count)}");
         }
     }
 }

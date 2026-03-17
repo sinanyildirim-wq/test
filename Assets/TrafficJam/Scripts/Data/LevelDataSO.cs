@@ -9,6 +9,8 @@ namespace TrafficJam.Data
         [Header("Level Info")]
         // tr: Mevcut seviyenin numarası.
         public int currentLevel;
+        [Header("Level Environment")]
+        public GameObject levelEnvironmentPrefab;
 
         [Header("Economy & Upgrades")]
         // tr: Bir sonraki seviyeye geçmek (veya yolu geliştirmek) için gereken para miktarı.

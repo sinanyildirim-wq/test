@@ -2,77 +2,107 @@ using System.Collections.Generic;
 using TrafficJam.Core;
 using TrafficJam.Data;
 using UnityEngine;
+using DG.Tweening;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Objekt havuzundan spawn edilen araçların rotayı takip edip ilerlemesini sağlayan AI kodu.
+    // tr: Havuzdan spawn edilen araçların rotayı takip edip ilerlemesini sağlayan agent scripti.
     public class CarAgent : MonoBehaviour
     {
         [Header("Data References")]
-        // tr: Aracın özelliklerini (seviye, hız, gelir) tutan ScriptableObject referansı.
         public CarDataSO carData;
 
-        // tr: Performans optimizasyonu: Waypoint geçişlerinde mesafeyi hesaplarken kullanacağımız hata payı.
         private const float DistanceThreshold = 0.2f;
 
         private List<Transform> waypoints;
         private int currentWaypointIndex = 0;
         private bool isMoving = false;
+        private bool isDragging = false;
+
+        [Header("Visuals")]
+        [SerializeField] private GameObject highlightIndicator;
+        [SerializeField, Range(1f, 3f)] private float highlightScaleMultiplier = 1.6f;
+
+        private Vector3 _defaultHighlightScale;
 
         private void OnEnable()
         {
             currentWaypointIndex = 0;
             isMoving = false;
-            
-            // tr: Rotayı PathManager'dan alıyoruz. Fail-Safe kontrol.
-            if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0) 
-            { 
-                 gameObject.SetActive(false); 
-                 return; 
+
+            // tr: PathManager hazır değilse sessizce bekle, TrafficManager zaten yol olmadan spawn etmez.
+            if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0)
+                return;
+
+            if (highlightIndicator != null)
+            {
+                _defaultHighlightScale = highlightIndicator.transform.localScale == Vector3.zero
+                    ? Vector3.one
+                    : highlightIndicator.transform.localScale;
+                highlightIndicator.SetActive(false);
             }
 
+            EventManager.OnDragStarted += HandleDragStarted;
+            EventManager.OnDragEnded += HandleDragEnded;
+        }
+
+        private void OnDisable()
+        {
+            EventManager.OnDragStarted -= HandleDragStarted;
+            EventManager.OnDragEnded -= HandleDragEnded;
+        }
+
+        // tr: TrafficManager spawn sonrasında bu metodu çağırarak aracı rotaya oturtur.
+        public void InitializePath()
+        {
+            if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0)
+                return;
+
             waypoints = PathManager.Instance.GetWaypoints();
-            
-            // tr: Arabayı doğrudan ilk noktanın (başlangıç çizgisinin) pozisyonuna ışınla.
+            currentWaypointIndex = 0;
             transform.position = waypoints[0].position;
-            
-            // tr: İlk noktadan sonraki noktaya doğru yönelt.
-            if (waypoints.Count > 1) transform.LookAt(waypoints[1]);
-            
+
+            if (waypoints.Count > 1)
+                transform.LookAt(waypoints[1]);
+
             isMoving = true;
         }
 
         private void Update()
         {
-            // tr: Eğer oyun duraklatılmışsa veya araç durmuşsa hareketi kes.
-            if (!isMoving || GameManager.Instance.CurrentState != GameState.Playing) return;
-            if (waypoints == null || waypoints.Count == 0 || carData == null) return;
+            if (!isMoving || isDragging) return;
+            if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameState.Playing) return;
+            if (carData == null)
+            {
+                // tr: Bu genelde prefab'da CarData referansı unutulduğunda olur (Tier2 merge sonrası en sık).
+                // Araba hata fırlatmasın diye hareket etmez; burada net loglayalım.
+                Debug.LogWarning($"[CarAgent] carData is NULL on '{name}'. Vehicle will not move. Assign correct CarDataSO on prefab.");
+                return;
+            }
+
+            if (waypoints == null || waypoints.Count == 0) return;
 
             MoveTowardsNextWaypoint();
         }
 
         private void MoveTowardsNextWaypoint()
         {
-            Transform targetWaypoint = waypoints[currentWaypointIndex];
+            Transform target = waypoints[currentWaypointIndex];
 
-            // tr: Ağır Unity fizikleri (Rigidbody/AddForce) yerine mobil optimizasyona uygun basit vektör matematiği.
-            transform.position = Vector3.MoveTowards(transform.position, targetWaypoint.position, carData.baseSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(
+                transform.position, target.position, carData.baseSpeed * Time.deltaTime);
 
-            // tr: Hedefe yavaşça dönme (Rotasyon). Snap olmaması için Slerp kullanıyoruz.
-            Vector3 direction = (targetWaypoint.position - transform.position).normalized;
+            Vector3 direction = (target.position - transform.position).normalized;
             if (direction != Vector3.zero)
             {
                 Quaternion endRotation = Quaternion.LookRotation(direction);
                 transform.rotation = Quaternion.Slerp(transform.rotation, endRotation, Time.deltaTime * 10f);
             }
 
-            // tr: Hedef noktaya ulaştıysak ve mesafe toleransın altındaysa indeks artır.
-            if (Vector3.Distance(transform.position, targetWaypoint.position) < DistanceThreshold)
+            if (Vector3.Distance(transform.position, target.position) < DistanceThreshold)
             {
                 currentWaypointIndex++;
 
-                // tr: Son waypoint'e (Gişeye) ulaştıysa...
-                // tr: Idle oyun döngüsünde yoldan çıkan araç tekrar başa döner ve o esnada para fırlatır.
                 if (currentWaypointIndex >= waypoints.Count)
                 {
                     CompleteLap();
@@ -82,14 +112,42 @@ namespace TrafficJam.Gameplay
 
         private void CompleteLap()
         {
-            Debug.Log("[CarAgent] tr: Araç turu tamamladı, havuza dönüyor ve para kazandırıyor.");
-            
-            // tr: Aracın kazandırdığı parayı EconomyManager'a ve diğer sistemlere bildir.
             EventManager.OnCarCompletedLap?.Invoke(carData.incomePerLap);
 
-            // tr: Havuza geri gönder. TrafficManager daha sonra tekrar pull alacak / veya döngü de yapabilirsin.
-            // Kullanıcının isteği: Son waypoint'e ulaşıp ReturnToPool çalıştığında...
+            // tr: Aktif araç listesinden çıkar ve havuza geri gönder.
+            if (TrafficManager.Instance != null)
+                TrafficManager.Instance.RemoveCarFromActive(gameObject);
+
             ObjectPoolManager.Instance.ReturnToPool(carData.poolId, gameObject);
+        }
+
+        public void SetDraggingState(bool state)
+        {
+            isDragging = state;
+        }
+
+        private void HandleDragStarted(int draggedTier, GameObject draggedObj)
+        {
+            if (draggedObj == gameObject) return;
+
+            // tr: Aynı seviyedeki araçlar ışıklarını yakıp nefes alma animasyonu oynatır.
+            if (carData.tier == draggedTier && highlightIndicator != null)
+            {
+                highlightIndicator.SetActive(true);
+                highlightIndicator.transform.DOScale(new Vector3(1.8f, 1.8f, 1.8f), 0.5f)
+                    .SetLoops(-1, LoopType.Yoyo)
+                    .SetEase(Ease.InOutSine);
+            }
+        }
+
+        private void HandleDragEnded()
+        {
+            if (highlightIndicator != null)
+            {
+                highlightIndicator.transform.DOKill();
+                highlightIndicator.transform.localScale = _defaultHighlightScale;
+                highlightIndicator.SetActive(false);
+            }
         }
     }
 }

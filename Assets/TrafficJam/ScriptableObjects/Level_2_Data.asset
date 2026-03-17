@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b5823629ec709824983b1ba765569cec, type: 3}
-  m_Name: Level_1_Data
+  m_Name: Level_2_Data
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Data.LevelDataSO
-  currentLevel: 1
-  levelEnvironmentPrefab: {fileID: 6793137643876151439, guid: fd4854ae172afb24f8956b8e253edb20, type: 3}
-  upgradeCost: 100
-  maxCarCapacity: 5
+  currentLevel: 2
+  levelEnvironmentPrefab: {fileID: 2212854096605486689, guid: 44ff1561c8803b546b6ef6491fdec10d, type: 3}
+  upgradeCost: 160
+  maxCarCapacity: 6

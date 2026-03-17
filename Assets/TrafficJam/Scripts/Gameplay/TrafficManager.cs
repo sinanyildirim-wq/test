@@ -1,25 +1,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using TrafficJam.Core;
-using TrafficJam.Data;
 using UnityEngine;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Oyundaki araç trafiğini yöneten, havuzdan belirli aralıklarla araç spawn eden Singleton sınıf.
+    // tr: Araç trafiğini yöneten, havuzdan belirli aralıklarla araç spawn eden Singleton sınıfı.
     public class TrafficManager : MonoBehaviour
     {
         public static TrafficManager Instance { get; private set; }
 
-        [Header("Settings & Data")]
-        // tr: Sahnedeki max kapasite sınırını bilmek için yola ait genel data.
-        [SerializeField] private LevelDataSO currentLevelData;
-        
-        // tr: Araçların yola çıkmadan önce ne kadar süre bekleyeceğini (Spawn Rate) belirler.
-        [SerializeField] private float spawnInterval = .5f;
+        [SerializeField] private float spawnInterval = 1.0f;
 
-        // tr: Sahnede aktif olan (yolda gezen) araçların listesi. Limit kontrolü için gereklidir.
+        [Header("Debug")]
+        [Tooltip("tr: Açıkken her spawn tick'inde log basar.")]
+        [SerializeField] private bool verboseSpawnLogs = false;
+
         private List<GameObject> activeCarsOnRoad = new List<GameObject>();
+        private Coroutine spawnCoroutine;
+        private bool isLevelReady = false;
 
         private void Awake()
         {
@@ -28,79 +27,219 @@ namespace TrafficJam.Gameplay
                 Destroy(gameObject);
                 return;
             }
-
             Instance = this;
         }
 
         private void OnEnable()
         {
+            EventManager.OnGameStateChanged += HandleGameStateChanged;
+            EventManager.OnLevelLoaded += HandleLevelLoaded;
             EventManager.OnCarMerged += HandleCarMerged;
+            Debug.Log("[TrafficManager] Enabled. Waiting for level + Playing state to start traffic.");
         }
 
         private void OnDisable()
         {
+            EventManager.OnGameStateChanged -= HandleGameStateChanged;
+            EventManager.OnLevelLoaded -= HandleLevelLoaded;
             EventManager.OnCarMerged -= HandleCarMerged;
+            StopSpawnRoutine();
         }
 
-        private void Start()
+        private void HandleLevelLoaded()
         {
-            // tr: Sürekli araba üreten coroutine tetiklenir.
-            StartCoroutine(SpawnCarRoutine());
+            isLevelReady = true;
+            Debug.Log("[TrafficManager] Level loaded. Traffic is ready.");
+
+            if (GameManager.Instance != null && GameManager.Instance.CurrentState == GameState.Playing)
+            {
+                // tr: Level geçişinde bazı frame'lerde PathManager.Instance/waypoints anlık olarak boş görünebiliyor.
+                // tr: Bu yüzden spawn başlatmayı bir frame erteleyip kısa süre waypoint gelene kadar bekliyoruz.
+                StartSpawnRoutineDeferred();
+            }
+            else
+            {
+                Debug.Log($"[TrafficManager] Level ready but GameState is not Playing yet (state={GameManager.Instance?.CurrentState}).");
+            }
         }
 
-        private IEnumerator SpawnCarRoutine()
+        private void HandleGameStateChanged(GameState newState)
+        {
+            Debug.Log($"[TrafficManager] GameState changed: {newState} (isLevelReady={isLevelReady})");
+            if (newState != GameState.Playing)
+            {
+                StopSpawnRoutine();
+                return;
+            }
+
+            // tr: Playing'e geçildi ve level hazırsa coroutine'i başlat.
+            if (isLevelReady)
+            {
+                StartSpawnRoutineDeferred();
+            }
+            else
+            {
+                Debug.Log("[TrafficManager] Playing state reached, but level is not ready yet. Waiting for OnLevelLoaded.");
+            }
+        }
+
+        private void StartSpawnRoutineDeferred()
+        {
+            StopSpawnRoutine();
+            StartCoroutine(WaitForWaypointsThenStart());
+        }
+
+        private IEnumerator WaitForWaypointsThenStart()
+        {
+            // tr: 60 frame ~ 1 saniye. Bu süre içinde waypoint gelmezse hata basıp vazgeçeriz.
+            const int maxFrames = 60;
+            for (int i = 0; i < maxFrames; i++)
+            {
+                if (PathManager.Instance != null && PathManager.Instance.GetWaypoints() != null && PathManager.Instance.GetWaypoints().Count > 0)
+                {
+                    StartSpawnRoutine();
+                    yield break;
+                }
+                yield return null; // tr: bir sonraki frame
+            }
+
+            int count = (PathManager.Instance == null || PathManager.Instance.GetWaypoints() == null) ? 0 : PathManager.Instance.GetWaypoints().Count;
+            Debug.LogError($"[TrafficManager] Cannot start spawn: waypoints still missing after wait. PathManager={(PathManager.Instance == null ? "null" : PathManager.Instance.name)}, count={count}");
+        }
+
+        private void StartSpawnRoutine()
+        {
+            StopSpawnRoutine();
+
+            if (PathManager.Instance == null || PathManager.Instance.GetWaypoints() == null || PathManager.Instance.GetWaypoints().Count == 0)
+            {
+                Debug.LogError("[TrafficManager] Cannot start spawn: PathManager has no waypoints yet.");
+                return;
+            }
+
+            if (LevelManager.Instance == null || LevelManager.Instance.CurrentLevelData == null)
+            {
+                Debug.LogError("[TrafficManager] Cannot start spawn: LevelManager.CurrentLevelData is null (level not initialized).");
+                return;
+            }
+
+            Debug.Log($"[TrafficManager] Starting spawn routine. spawnInterval={spawnInterval}, capacity={LevelManager.Instance.CurrentLevelData.maxCarCapacity}");
+            spawnCoroutine = StartCoroutine(SpawnRoutine());
+        }
+
+        private void StopSpawnRoutine()
+        {
+            if (spawnCoroutine != null)
+            {
+                StopCoroutine(spawnCoroutine);
+                spawnCoroutine = null;
+            }
+        }
+
+        private IEnumerator SpawnRoutine()
         {
             while (true)
             {
-                // tr: Oyun Playing durumundaysa ve hala yolda eklenebilecek araç kapasitesi varsa araç spawn et.
-                if (GameManager.Instance.CurrentState == GameState.Playing && currentLevelData != null)
-                {
-                    // FAIL-SAFE
-                    if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0)
-                    {
-                        Debug.LogError("[TrafficManager] tr: Waypoint listesi BOŞ! Lütfen PathManager'a waypointleri atayın.");
-                        yield return new WaitForSeconds(2f);
-                        continue;
-                    }
+                // tr: Zamanlama beklentisi: araçlar spawnInterval kadar bekledikten sonra aktif olsun.
+                yield return new WaitForSeconds(spawnInterval);
 
-                    if (activeCarsOnRoad.Count < currentLevelData.maxCarCapacity)
+                if (GameManager.Instance.CurrentState == GameState.Playing && isLevelReady)
+                {
+                    int currentActiveCars = activeCarsOnRoad.Count;
+                    if (currentActiveCars < LevelManager.Instance.CurrentLevelData.maxCarCapacity)
                     {
+                        if (verboseSpawnLogs)
+                        {
+                            Debug.Log($"[TrafficManager] Spawn tick. t={Time.time:F2}, active={currentActiveCars}/{LevelManager.Instance.CurrentLevelData.maxCarCapacity}");
+                        }
                         SpawnCar("Car_Tier1");
                     }
+                    else if (verboseSpawnLogs)
+                    {
+                        Debug.Log($"[TrafficManager] Spawn skipped (capacity). t={Time.time:F2}, active={currentActiveCars}/{LevelManager.Instance.CurrentLevelData.maxCarCapacity}");
+                    }
                 }
-
-                // tr: Belirtilen saniye kadar bekle.
-                yield return new WaitForSeconds(spawnInterval);
             }
         }
 
-        // tr: ObjectPoolManager kullanarak spawn işlemini yapar.
         private void SpawnCar(string poolId)
         {
+            if (PathManager.Instance == null || PathManager.Instance.GetWaypoints() == null || PathManager.Instance.GetWaypoints().Count == 0)
+            {
+                int count = (PathManager.Instance == null || PathManager.Instance.GetWaypoints() == null) ? 0 : PathManager.Instance.GetWaypoints().Count;
+                Debug.LogError($"[TrafficManager] SpawnCar failed: no waypoints. PathManager={(PathManager.Instance == null ? "null" : PathManager.Instance.name)}, count={count}");
+                return;
+            }
+
             Transform startPoint = PathManager.Instance.GetWaypoints()[0];
-            
-            // tr: ObjectPool'dan aracı al.
             GameObject car = ObjectPoolManager.Instance.SpawnFromPool(poolId, startPoint.position, startPoint.rotation);
 
-            if (car != null)
-            {
-                if (!activeCarsOnRoad.Contains(car))
-                {
-                    activeCarsOnRoad.Add(car);
-                }
-                
-                // tr: Araç başarıyla yola çıktığını global olarak haber ver (örnek: UI'ı güncellemek için).
-                EventManager.OnCarSpawned?.Invoke(car);
-                Debug.Log($"[TrafficManager] tr: Araç spawn edildi. Aktif araç sayısı: {activeCarsOnRoad.Count}");
-            }
+            if (car == null) return;
+
+            if (!activeCarsOnRoad.Contains(car))
+                activeCarsOnRoad.Add(car);
+
+            CarAgent agent = car.GetComponent<CarAgent>();
+            if (agent != null)
+                agent.InitializePath();
+
+            EventManager.OnCarSpawned?.Invoke(car);
         }
 
-        // tr: Arabalar birleştiğinde (Merge) eski arabalar yok olur, yenisi çıkacaktır.
+        // tr: Araç havuza döndüğünde aktif listeden çıkar.
+        public void RemoveCarFromActive(GameObject car)
+        {
+            activeCarsOnRoad.Remove(car);
+        }
+
+        // tr: Merge ile doğan yeni aracı aktif listeye ekler (kapasite hesabı için).
+        public void AddCarToActive(GameObject car)
+        {
+            if (car != null && !activeCarsOnRoad.Contains(car))
+                activeCarsOnRoad.Add(car);
+        }
+
+        // tr: Level geçişinde kritik temizlik. Eski level'in araçlarını havuza geri yollar (gizler).
+        // tr: Böylece yeni environment yüklendiğinde "eski yolun" araçları saçmalamaz.
+        public void ReturnAllActiveCarsToPool()
+        {
+            // tr: Spawn rutini dursun; temizlik sırasında yeni araç gelmesin.
+            StopSpawnRoutine();
+            isLevelReady = false;
+
+            if (activeCarsOnRoad == null || activeCarsOnRoad.Count == 0) return;
+            if (ObjectPoolManager.Instance == null)
+            {
+                Debug.LogError("[TrafficManager] ReturnAllActiveCarsToPool failed: ObjectPoolManager.Instance is null.");
+                return;
+            }
+
+            // tr: Listeyi iterate ederken değiştirmemek için kopya alıyoruz.
+            List<GameObject> snapshot = new List<GameObject>(activeCarsOnRoad);
+
+            foreach (GameObject car in snapshot)
+            {
+                if (car == null) continue;
+
+                CarAgent agent = car.GetComponent<CarAgent>();
+                if (agent != null && agent.carData != null && !string.IsNullOrEmpty(agent.carData.poolId))
+                {
+                    ObjectPoolManager.Instance.ReturnToPool(agent.carData.poolId, car);
+                }
+                else
+                {
+                    // tr: Havuz ID'si bulunamazsa güvenli fallback: sahnede görünmesin.
+                    car.SetActive(false);
+                }
+            }
+
+            // tr: Aktif araç sayısını sıfırla (kapasite ve spawn hesapları için).
+            activeCarsOnRoad.Clear();
+        }
+
         private void HandleCarMerged(int newTierIndex)
         {
-            // İleride burada birleşen arabaları listeden çıkarıp üst seviye arabayı listeye / havuza ekleme kodları olacak.
-            // Örnek: activeCarsOnRoad.Remove(eskiAraba1); // vesaire
-            Debug.Log($"[TrafficManager] tr: Arabalar birleşti ve Tier {newTierIndex} oluşturuldu. Gerekli işlemler burada yapılacak.");
+            // tr: İleride birleşen araçların listeden çıkarılması burada yapılacak.
         }
     }
 }

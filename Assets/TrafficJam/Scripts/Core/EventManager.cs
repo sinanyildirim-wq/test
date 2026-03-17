@@ -3,33 +3,37 @@ using UnityEngine;
 
 namespace TrafficJam.Core
 {
-    // tr: Oyundaki tüm önemli olayları (Event) merkezi bir yerde tutan statik EventManager sınıfı.
-    // tr: Sistemlerin birbirini doğrudan tanımasını (tight coupling) engeller. Loose coupling sağlar.
+    // tr: Tüm sistemler arası iletişimi sağlayan merkezi olay yöneticisi. Loose coupling mimarisi.
     public static class EventManager
     {
-        // tr: Araç Object Pool'dan çekilip yola eklendiğinde tetiklenir.
         public static Action<GameObject> OnCarSpawned;
-
-        // tr: Para/Bakiye miktarı değiştiğinde tetiklenir. İlk parametre değişim miktarı, ikincisi yeni toplam bakiye.
         public static Action<int, int> OnMoneyChanged;
-
-        // tr: İki araç başarıyla birleştirildiğinde (Merge) tetiklenir. Parametre, yeni aracın seviyesi (Tier).
         public static Action<int> OnCarMerged;
-
-        // tr: Turu tamamlayan araç gişeden/bitişten geçtiğinde tetiklenir. Parametre: Kazanılan Para.
         public static Action<int> OnCarCompletedLap;
+        public static Action<int, GameObject> OnDragStarted;
+        public static Action OnDragEnded;
+        public static Action<GameState> OnGameStateChanged;
+        public static Action OnLevelLoaded;
 
-        // tr: Yeni bir yol veya gişe upgrade edildiğinde tetiklenir.
-        public static Action<int> OnRoadUpgraded;
+        // tr: Level progression (bar) için event'ler.
+        // normalizedProgress: 0..1 aralığında.
+        public static Action<float> OnLevelProgressChanged;
+        public static Action OnLevelProgressReady; // tr: Bar doldu, "LEVEL UP" butonu gösterilebilir.
+        public static Action OnLevelProgressConsumed; // tr: Level up'a basıldı; bar resetlendi.
 
-        // tr: Sahne yeniden yüklendiğinde eski event dinleyicilerini temizlemek için kullanılır (Memory leak önlemi).
         public static void ClearAllEvents()
         {
             OnCarSpawned = null;
             OnMoneyChanged = null;
             OnCarMerged = null;
             OnCarCompletedLap = null;
-            OnRoadUpgraded = null;
+            OnDragStarted = null;
+            OnDragEnded = null;
+            OnGameStateChanged = null;
+            OnLevelLoaded = null;
+            OnLevelProgressChanged = null;
+            OnLevelProgressReady = null;
+            OnLevelProgressConsumed = null;
         }
     }
 }
