@@ -26,7 +26,7 @@ namespace TrafficJam.Gameplay
 
         [Header("Visuals")]
         [SerializeField] private GameObject highlightIndicator;
-        [SerializeField, Range(1f, 3f)] private float highlightScaleMultiplier = 1.6f;
+        //[SerializeField, Range(1f, 3f)] private float highlightScaleMultiplier = 1.6f;
 
         private Vector3 _defaultHighlightScale;
 
@@ -161,7 +161,7 @@ namespace TrafficJam.Gameplay
             if (highlightIndicator != null)
             {
                 highlightIndicator.transform.DOKill();
-                highlightIndicator.transform.localScale = _defaultHighlightScale * highlightScaleMultiplier;
+                highlightIndicator.transform.localScale = _defaultHighlightScale;
                 highlightIndicator.SetActive(false);
             }
         }
