@@ -6,7 +6,12 @@ using DG.Tweening;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Havuzdan spawn edilen araçların rotayı takip edip ilerlemesini sağlayan agent scripti.
+    // tr: Araba davranışı (AI agent).
+    // tr: Bu script havuzdan spawn edilen arabanın:
+    // tr: - Waypoint rotasını almasını (InitializePath)
+    // tr: - Playing state'te hareket etmesini (Update)
+    // tr: - Tur bitince para kazandırıp havuza dönmesini (CompleteLap)
+    // tr: - Drag sırasında durmasını ve highlight sistemini yönetmesini sağlar.
     public class CarAgent : MonoBehaviour
     {
         [Header("Data References")]
@@ -27,10 +32,12 @@ namespace TrafficJam.Gameplay
 
         private void OnEnable()
         {
+            // tr: Havuzdan çıkan her instance için state'i sıfırla.
             currentWaypointIndex = 0;
             isMoving = false;
 
-            // tr: PathManager hazır değilse sessizce bekle, TrafficManager zaten yol olmadan spawn etmez.
+            // tr: PathManager hazır değilse sessizce bekle.
+            // tr: (Normalde TrafficManager waypoint olmadan spawn etmez; ama merge gibi edge-case'lerde yine de güvenli kalırız.)
             if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0)
                 return;
 
@@ -55,6 +62,11 @@ namespace TrafficJam.Gameplay
         // tr: TrafficManager spawn sonrasında bu metodu çağırarak aracı rotaya oturtur.
         public void InitializePath()
         {
+            // tr: Spawn olur olmaz bu metot çağrılırsa araç "yola oturur".
+            // tr: - Waypoint listesini alır
+            // tr: - Başlangıç noktasına teleport olur
+            // tr: - Bir sonraki noktaya bakacak şekilde yönlenir
+            // tr: - isMoving=true ile Update hareket etmeye başlar
             if (PathManager.Instance == null || PathManager.Instance.GetWaypoints().Count == 0)
                 return;
 
@@ -70,6 +82,7 @@ namespace TrafficJam.Gameplay
 
         private void Update()
         {
+            // tr: Drag sırasında veya oyun Pause/MainMenu durumlarında araç hareket etmez.
             if (!isMoving || isDragging) return;
             if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameState.Playing) return;
             if (carData == null)
@@ -112,12 +125,14 @@ namespace TrafficJam.Gameplay
 
         private void CompleteLap()
         {
+            // tr: Tur tamamlandı: oyuncuya para kazandır.
             EventManager.OnCarCompletedLap?.Invoke(carData.incomePerLap);
 
             // tr: Aktif araç listesinden çıkar ve havuza geri gönder.
             if (TrafficManager.Instance != null)
                 TrafficManager.Instance.RemoveCarFromActive(gameObject);
 
+            // tr: Destroy etmiyoruz; havuza iade edip tekrar kullanıyoruz.
             ObjectPoolManager.Instance.ReturnToPool(carData.poolId, gameObject);
         }
 
@@ -145,7 +160,7 @@ namespace TrafficJam.Gameplay
             if (highlightIndicator != null)
             {
                 highlightIndicator.transform.DOKill();
-                highlightIndicator.transform.localScale = _defaultHighlightScale;
+                highlightIndicator.transform.localScale = _defaultHighlightScale * highlightScaleMultiplier;
                 highlightIndicator.SetActive(false);
             }
         }

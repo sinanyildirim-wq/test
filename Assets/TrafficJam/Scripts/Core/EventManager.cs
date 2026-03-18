@@ -3,7 +3,9 @@ using UnityEngine;
 
 namespace TrafficJam.Core
 {
-    // tr: Tüm sistemler arası iletişimi sağlayan merkezi olay yöneticisi. Loose coupling mimarisi.
+    // tr: Tüm sistemler arası iletişim noktası.
+    // tr: Amaç: Birbirini tanımayan sistemlerin (UI, trafik, ekonomi, level) Action event'leri üzerinden haberleşmesi.
+    // tr: Not: Event'ler static olduğu için sahne reload / play-stop sırasında "eski aboneler" kalmasın diye ClearAllEvents kullanılır.
     public static class EventManager
     {
         public static Action<GameObject> OnCarSpawned;
@@ -23,6 +25,7 @@ namespace TrafficJam.Core
 
         public static void ClearAllEvents()
         {
+            // tr: Statik event'leri sıfırlayarak "ghost listener" (eski sahneden kalan aboneler) riskini azaltır.
             OnCarSpawned = null;
             OnMoneyChanged = null;
             OnCarMerged = null;

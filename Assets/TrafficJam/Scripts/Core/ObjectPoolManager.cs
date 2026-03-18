@@ -3,7 +3,8 @@ using UnityEngine;
 
 namespace TrafficJam.Core
 {
-    // tr: Havuzda tutulacak objelerin inspector üzerinden ayarlanabilmesi için yapı.
+    // tr: Inspector'dan havuz (pool) tanımlamak için veri yapısı.
+    // tr: Her PoolItem: bir prefab + başlangıç adedi + hiyerarşide nereye parent'lanacağı.
     [System.Serializable]
     public class PoolItem
     {
@@ -34,6 +35,7 @@ namespace TrafficJam.Core
             }
 
             Instance = this;
+            // tr: Oyun başında bütün havuzları doldurur. Bu sayede runtime'da Instantiate maliyeti azalır.
             InitializePools();
         }
 
@@ -71,6 +73,7 @@ namespace TrafficJam.Core
             // tr: Eğer havuz boşsa, dinamik olarak yeni bir instance oluştur. (Oyun sırasında takılmaları en aza indiririz ama loglarız)
             if (poolDictionary[id].Count == 0)
             {
+                // tr: Bu durum "initialSize düşük" veya "aynı anda çok fazla spawn" demektir.
                 Debug.Log($"[ObjectPoolManager] tr: {id} havuzu boşaldı, kapasite otomatik genişletiliyor (Expandable). Lütfen InitialSize'ı artırmayı düşünün.");
                 PoolItem config = poolItemConfigs[id];
                 GameObject newObj = Instantiate(config.prefab, config.parentTransform);
@@ -84,6 +87,7 @@ namespace TrafficJam.Core
             objectToSpawn.transform.rotation = rotation;
             objectToSpawn.SetActive(true);
 
+            // tr: Not: Spawn edilen objenin "reset" ihtiyacı varsa (anim, state vb.) OnEnable/Initialize metodlarıyla yönetilir.
             return objectToSpawn;
         }
 

@@ -5,7 +5,12 @@ using TrafficJam.Gameplay;
 
 namespace TrafficJam.Core
 {
-    // tr: Seviyeleri yükleyen ve yöneten Singleton sınıfı. Event-driven çalışır.
+    // tr: Level yükleme ve environment yönetimi.
+    // tr: Sorumluluk:
+    // tr: - CurrentLevelData seçmek (hangi LevelDataSO aktif?)
+    // tr: - Level environment prefabını instantiate etmek
+    // tr: - Yeni levelin waypoint rotasını global PathManager'a vermek
+    // tr: - Level değişiminde eski araçları temizlemek (TrafficManager üzerinden)
     public class LevelManager : MonoBehaviour
     {
         public static LevelManager Instance { get; private set; }
@@ -29,7 +34,7 @@ namespace TrafficJam.Core
             Instance = this;
 
             // tr: Global PathManager sahnede yoksa otomatik oluştur.
-            // tr: Bu sayede level prefabı içindeki PathManager sadece "data holder" olur; singleton null kalmaz.
+            // tr: Level prefabı içinde de PathManager bulunabilir ama o sadece waypoint "data holder" olarak kalır.
             if (PathManager.Instance == null)
             {
                 GameObject go = new GameObject("--- PathManager (Global) ---");

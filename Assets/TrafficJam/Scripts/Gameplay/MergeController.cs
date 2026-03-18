@@ -5,7 +5,12 @@ using DG.Tweening;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Oyuncunun araçları sürükleyip birleştirmesini sağlayan kontrolcü sınıfı.
+    // tr: Merge / sürükle-bırak kontrolcüsü.
+    // tr: Oyuncu bir aracı sürükler -> aynı tier başka aracın üstüne bırakırsa birleşme olur.
+    // tr: Akış:
+    // tr: - StartDragging: Raycast ile araç seç, drag state aç, EventManager.OnDragStarted yayınla
+    // tr: - UpdateDragging: Aracı düzlem üzerinde pointer'a göre taşı
+    // tr: - StopDragging: Hedef araç varsa CheckMerge -> PerformMerge
     public class MergeController : MonoBehaviour
     {
         [Header("Settings")]
@@ -41,6 +46,8 @@ namespace TrafficJam.Gameplay
 
         private void StartDragging()
         {
+            // tr: Pointer ekran pozisyonundan dünya ışını atıyoruz.
+            // tr: carLayer filtreli Raycast ile sadece araç collider'larını yakalıyoruz.
             Vector2 screenPos = Pointer.current.position.ReadValue();
             Ray ray = Camera.main.ScreenPointToRay(screenPos);
 
@@ -57,6 +64,7 @@ namespace TrafficJam.Gameplay
             }
 
             draggedAgent.SetDraggingState(true);
+            // tr: Diğer araçlar highlight yakabilsin diye "drag başladı" sinyali.
             EventManager.OnDragStarted?.Invoke(draggedAgent.carData.tier, draggedObject);
 
             originalPosition = draggedObject.transform.position;
@@ -88,6 +96,7 @@ namespace TrafficJam.Gameplay
 
         private void StopDragging()
         {
+            // tr: Pointer'ı bıraktığımız an, altındaki collider'lara bakıp merge hedefi arıyoruz.
             Vector2 screenPos = Pointer.current.position.ReadValue();
             Ray ray = Camera.main.ScreenPointToRay(screenPos);
 
@@ -118,6 +127,7 @@ namespace TrafficJam.Gameplay
             }
 
             draggedAgent.SetDraggingState(false);
+            // tr: Highlight kapanması vb. için "drag bitti" sinyali.
             EventManager.OnDragEnded?.Invoke();
 
             draggedObject = null;
@@ -149,6 +159,8 @@ namespace TrafficJam.Gameplay
 
         private void PerformMerge(CarAgent targetAgent, int currentTier)
         {
+            // tr: Aynı tier + aynı hedef üstüne bırakıldı => bir üst tier araç doğar.
+            // tr: Eski 2 araç havuza döner, yeni araç havuzdan spawn edilir.
             int nextTier = currentTier + 1;
             string newPoolId = $"Car_Tier{nextTier}";
             Vector3 spawnPos = targetAgent.transform.position;

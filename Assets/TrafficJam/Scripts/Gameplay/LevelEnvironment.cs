@@ -3,7 +3,11 @@ using UnityEngine;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Her bir level prefabının kök (root) objesinde duracak script. Kendi rotasını barındırır.
+    // tr: Level environment "data container" (opsiyonel).
+    // tr: Bazı level prefablarında waypoint listesi PathManager component'i üzerinden tutulur.
+    // tr: Eğer istersen waypointleri doğrudan burada da tutabilirsin:
+    // tr: - LevelManager önce prefab içindeki PathManager'ı arar
+    // tr: - Bulamazsa bu komponenti (LevelEnvironment) fallback olarak kullanır
     public class LevelEnvironment : MonoBehaviour
     {
         [Header("Route Settings")]

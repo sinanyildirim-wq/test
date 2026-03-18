@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace TrafficJam.Core
 {
+    // tr: Oyunun "durum makinesi" (state machine) tanımı.
+    // tr: UI ve gameplay sistemleri bu durumu EventManager.OnGameStateChanged ile dinler.
     public enum GameState
     {
         MainMenu,
@@ -35,10 +37,12 @@ namespace TrafficJam.Core
         {
             if (autoStartInEditor && Application.isEditor)
             {
+                // tr: Hızlı test modu: doğrudan oynanışa girer (menü akışını atlar).
                 ChangeState(GameState.Playing);
                 return;
             }
 
+            // tr: Normal akış: oyun açılışta ana menüde başlar.
             ChangeState(GameState.MainMenu);
         }
 
@@ -64,9 +68,11 @@ namespace TrafficJam.Core
                 case GameState.MainMenu:
                 case GameState.Playing:
                 case GameState.GameOver:
+                    // tr: Oyun akıyor.
                     Time.timeScale = 1f;
                     break;
                 case GameState.Paused:
+                    // tr: Oyun duruyor (animasyonlar/unscaled tween ayrı yönetilebilir).
                     Time.timeScale = 0f;
                     break;
             }

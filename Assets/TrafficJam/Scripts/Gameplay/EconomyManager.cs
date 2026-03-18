@@ -3,7 +3,11 @@ using UnityEngine;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Oyundaki ana ekonomiyi (para, bakiye, gelir, gider) yöneten Singleton sınıfı.
+    // tr: Oyundaki para akışını yöneten basit ekonomi sistemi.
+    // tr: Sorumluluk:
+    // tr: - Araç tur bitirince para eklemek (OnCarCompletedLap -> AddMoney)
+    // tr: - Upgrade/level geçişi için para harcamak (SpendMoney)
+    // tr: - Yeterli para varsa bir sonraki level'a geçmek (TryUpgradeToNextLevel)
     public class EconomyManager : MonoBehaviour
     {
         public static EconomyManager Instance { get; private set; }
@@ -25,7 +29,8 @@ namespace TrafficJam.Gameplay
 
         private void OnEnable()
         {
-            // tr: Araç turu tamamlandığında OnCarCompletedLap tetiklenir, biz de AddMoney metoduna yönlendiririz.
+            // tr: Araç tur tamamlayınca CarAgent -> EventManager.OnCarCompletedLap tetikler.
+            // tr: Burada onu AddMoney'e bağlarız.
             if (EventManager.OnCarCompletedLap != null)
                 EventManager.OnCarCompletedLap += AddMoney;
             else
@@ -49,7 +54,7 @@ namespace TrafficJam.Gameplay
             currentMoney += amount;
             Debug.Log($"[EconomyManager] tr: {amount} para kazanıldı. Toplam Bakiye: {currentMoney}");
 
-            // tr: UI'ı (arayüzü) veya diğer dinleyicileri haberdar et.
+            // tr: UIManager ve LevelProgressionManager bu event'i dinleyip (UI + progress bar) günceller.
             EventManager.OnMoneyChanged?.Invoke(amount, currentMoney);
         }
 
@@ -64,7 +69,7 @@ namespace TrafficJam.Gameplay
                 currentMoney -= amount;
                 Debug.Log($"[EconomyManager] tr: {amount} para harcandı. Kalan Bakiye: {currentMoney}");
                 
-                // tr: Negatif amount göndererek harcama olduğunu belirtebiliriz (isteğe bağlı).
+                // tr: Negatif changeAmount -> UI tarafı istersen "harcama efekti" gibi ayırt edebilir.
                 EventManager.OnMoneyChanged?.Invoke(-amount, currentMoney);
                 return true;
             }
@@ -79,6 +84,11 @@ namespace TrafficJam.Gameplay
         // UI butonu, tutorial veya başka sistemler bu metodu çağırabilir.
         public bool TryUpgradeToNextLevel()
         {
+            // tr: Bu metod "level up" butonuna basıldığında çağrılır.
+            // tr: Akış:
+            // tr: 1) CurrentLevelData.upgradeCost okunur
+            // tr: 2) Para yetiyorsa SpendMoney ile düşülür
+            // tr: 3) LevelManager.LoadNextLevel ile yeni environment yüklenir
             if (LevelManager.Instance == null)
             {
                 Debug.LogError("[EconomyManager] TryUpgradeToNextLevel failed: LevelManager.Instance is null.");

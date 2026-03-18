@@ -5,7 +5,11 @@ using UnityEngine;
 
 namespace TrafficJam.Gameplay
 {
-    // tr: Araç trafiğini yöneten, havuzdan belirli aralıklarla araç spawn eden Singleton sınıfı.
+    // tr: Araç trafiği (spawn + aktif araç takibi) yöneticisi.
+    // tr: Sorumluluk:
+    // tr: - Level hazır olduğunda ve oyun Playing iken belirli aralıklarla araç spawn etmek
+    // tr: - Aktif araç listesini tutmak (kapasite kontrolü + level geçişinde temizlik)
+    // tr: - Level geçişinde eski araçları havuza geri göndermek (ReturnAllActiveCarsToPool)
     public class TrafficManager : MonoBehaviour
     {
         public static TrafficManager Instance { get; private set; }
@@ -48,6 +52,8 @@ namespace TrafficJam.Gameplay
 
         private void HandleLevelLoaded()
         {
+            // tr: LevelManager rota + environment hazır dedi (OnLevelLoaded).
+            // tr: Bundan sonra Playing state'teysek spawn rutinini başlatabiliriz.
             isLevelReady = true;
             Debug.Log("[TrafficManager] Level loaded. Traffic is ready.");
 
@@ -65,6 +71,7 @@ namespace TrafficJam.Gameplay
 
         private void HandleGameStateChanged(GameState newState)
         {
+            // tr: MainMenu/Pause gibi state'lerde spawn durur; Playing olunca tekrar başlar.
             Debug.Log($"[TrafficManager] GameState changed: {newState} (isLevelReady={isLevelReady})");
             if (newState != GameState.Playing)
             {
@@ -85,6 +92,8 @@ namespace TrafficJam.Gameplay
 
         private void StartSpawnRoutineDeferred()
         {
+            // tr: Level load sırasında singleton/waypoint referansları bir frame gecikmeli oturabiliyor.
+            // tr: Bu nedenle StartSpawnRoutine'yi doğrudan çağırmak yerine önce waypoint'i bekliyoruz.
             StopSpawnRoutine();
             StartCoroutine(WaitForWaypointsThenStart());
         }
@@ -164,6 +173,8 @@ namespace TrafficJam.Gameplay
 
         private void SpawnCar(string poolId)
         {
+            // tr: Spawn noktası olarak waypoint[0] kullanıyoruz.
+            // tr: Bu yüzden waypoint listesi boşsa spawn iptal edilir.
             if (PathManager.Instance == null || PathManager.Instance.GetWaypoints() == null || PathManager.Instance.GetWaypoints().Count == 0)
             {
                 int count = (PathManager.Instance == null || PathManager.Instance.GetWaypoints() == null) ? 0 : PathManager.Instance.GetWaypoints().Count;
@@ -183,6 +194,7 @@ namespace TrafficJam.Gameplay
             if (agent != null)
                 agent.InitializePath();
 
+            // tr: UI/debug tarafı "araba spawn oldu" gibi şeyler yapmak isterse bu event'i dinler.
             EventManager.OnCarSpawned?.Invoke(car);
         }
 
@@ -203,6 +215,8 @@ namespace TrafficJam.Gameplay
         // tr: Böylece yeni environment yüklendiğinde "eski yolun" araçları saçmalamaz.
         public void ReturnAllActiveCarsToPool()
         {
+            // tr: LevelManager.LoadLevel en başta bunu çağırır.
+            // tr: Amaç: Eski levelin araçları yeni level yolunda kalıp karışıklık yaratmasın.
             // tr: Spawn rutini dursun; temizlik sırasında yeni araç gelmesin.
             StopSpawnRoutine();
             isLevelReady = false;

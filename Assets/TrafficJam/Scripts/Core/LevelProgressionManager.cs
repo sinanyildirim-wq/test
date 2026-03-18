@@ -3,8 +3,11 @@ using UnityEngine;
 
 namespace TrafficJam.Core
 {
-    // tr: "Traffic Jam Fever" tarzı level progression yöneticisi.
-    // Merge ve/veya para kazanımıyla barı doldurur. Bar dolunca UI'a "Level Up" sinyali verir.
+    // tr: Level progression (ilerleme barı) yöneticisi.
+    // tr: Bu sistemin ana fikri:
+    // tr: - Her level için hedef = LevelDataSO.upgradeCost
+    // tr: - O level içinde kazanılan para / hedef = progress (0..1)
+    // tr: - Progress 1 olunca UI "LEVEL UP" butonunu açar; butona basınca EconomyManager cost harcar ve LevelManager next level yükler.
     public class LevelProgressionManager : MonoBehaviour
     {
         public static LevelProgressionManager Instance { get; private set; }
@@ -35,6 +38,7 @@ namespace TrafficJam.Core
 
         private void OnEnable()
         {
+            // tr: Progression; merge, para ve level yüklenme sinyallerini dinler.
             EventManager.OnCarMerged += HandleCarMerged;
             EventManager.OnMoneyChanged += HandleMoneyChanged;
             EventManager.OnLevelLoaded += HandleLevelLoaded;
@@ -54,7 +58,7 @@ namespace TrafficJam.Core
 
         private void HandleLevelLoaded()
         {
-            // tr: Yeni level geldiğinde progression sıfırlanabilir.
+            // tr: Yeni level geldi: Bu level için "kazanılan para" sayacı ve progress sıfırlanır.
             ResetProgress();
         }
 
@@ -79,6 +83,7 @@ namespace TrafficJam.Core
             int cost = LevelManager.Instance.CurrentLevelData.upgradeCost;
             if (cost <= 0) return;
 
+            // tr: Örn: cost=100, earned=25 => progress=0.25
             float normalized = Mathf.Clamp01(earnedMoneyThisLevel / (float)cost);
             currentProgress = normalized;
             PublishProgress();
@@ -141,6 +146,7 @@ namespace TrafficJam.Core
             bool ok = EconomyManager.Instance.TryUpgradeToNextLevel();
             if (!ok) return;
 
+            // tr: UI tarafı burada butonu kapatır, HUD geri gelir, timeScale eski haline döner.
             Debug.Log("[LevelProgressionManager] Progress consumed. Level up triggered.");
             EventManager.OnLevelProgressConsumed?.Invoke();
             ResetProgress();

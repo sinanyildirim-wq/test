@@ -7,7 +7,12 @@ using UnityEngine.UI;
 
 namespace TrafficJam.UI
 {
-    // tr: Para göstergesi vb. arayüz elemanlarını yöneten Singleton sınıfı.
+    // tr: UI köprü sınıfı (HUD + menüler + level up popup).
+    // tr: Bu sınıf "oyun mantığını" yapmaz; sadece event'leri dinleyip doğru UI objelerini aç/kapatır.
+    // tr: Akış:
+    // tr: - GameManager state değiştirir -> EventManager.OnGameStateChanged -> paneller senkronize olur
+    // tr: - EconomyManager para değiştirir -> EventManager.OnMoneyChanged -> MoneyText güncellenir
+    // tr: - LevelProgressionManager progress yayınlar -> slider dolar, hazır olunca LEVEL UP butonu açılır
     public class UIManager : MonoBehaviour
     {
         public static UIManager Instance { get; private set; }
@@ -64,6 +69,7 @@ namespace TrafficJam.UI
 
         private void OnEnable()
         {
+            // tr: UI, event-driven çalışır. Burada abonelik kurulur.
             // tr: Para değiştiğinde UI'ı güncellemek için event'e abone oluyoruz.
             EventManager.OnMoneyChanged += UpdateMoneyUI;
 
@@ -79,6 +85,7 @@ namespace TrafficJam.UI
 
         private void OnDisable()
         {
+            // tr: Abonelik temizliği. Aksi halde sahne reload sonrası event'ler iki kez tetiklenebilir.
             // tr: Hafıza sızıntısını önlemek için abonelikten çıkıyoruz.
             EventManager.OnMoneyChanged -= UpdateMoneyUI;
             EventManager.OnGameStateChanged -= HandleGameStateChanged;
@@ -96,6 +103,8 @@ namespace TrafficJam.UI
         // tr: Tüm panel aç/kapa mantığı burada toplanır — hem Start hem HandleGameStateChanged bu metodu kullanır (eş zamanlı çalışma).
         private void SyncPanelsToGameState()
         {
+            // tr: Tek kaynak: GameManager.CurrentState.
+            // tr: Burada panellerin aktif/pasif olmasına karar veriyoruz.
             GameState state = GameManager.Instance != null ? GameManager.Instance.CurrentState : GameState.MainMenu;
 
             if (mainMenuPanel != null)
@@ -147,6 +156,7 @@ namespace TrafficJam.UI
         {
             if (moneyText == null) return;
 
+            // tr: Görsel gösterim: toplam para. (changeAmount sadece animasyon/efekt için kullanılabilir.)
             moneyText.text = totalMoney.ToString() + " $";
             
             // tr: DOTween PunchScale ile "parlamış/vurgulanmış" hissi veriyoruz.
@@ -158,24 +168,29 @@ namespace TrafficJam.UI
         // tr: Ana menüdeki "Play" butonuna bağlanacak metod.
         public void OnPlayButtonClicked()
         {
+            // tr: UI button -> GameManager state değişimi.
             GameManager.Instance.StartGame();
         }
 
         // tr: Oyun içi "Pause" butonuna bağlanacak metod.
         public void OnPauseButtonClicked()
         {
+            // tr: UI button -> Pause state. UI panelleri state event'i ile güncellenir.
             GameManager.Instance.PauseGame();
         }
 
         // tr: Pause menüsündeki "Resume" butonuna bağlanacak metod.
         public void OnResumeButtonClicked()
         {
+            // tr: UI button -> tekrar Playing state.
             GameManager.Instance.ResumeGame();
         }
 
         // tr: Oyun içindeki "Upgrade / Next Level" butonuna bağlanacak metod.
         public void OnUpgradeLevelButtonClicked()
         {
+            // tr: LEVEL UP butonuna basılınca buraya düşer.
+            // tr: Bu metod direkt LevelManager çağırmaz; EconomyManager üzerinden cost düşer ve LevelManager tetiklenir.
             if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameState.Playing)
             {
                 Debug.LogWarning("[UIManager] Upgrade requested while not Playing.");
@@ -209,6 +224,7 @@ namespace TrafficJam.UI
 
         private void HandleLevelProgressReady()
         {
+            // tr: Bar doldu. LEVEL UP butonunu göster ve dikkat çekmesi için pulse animasyonu başlat.
             if (levelUpButtonRoot != null)
             {
                 levelUpButtonRoot.SetActive(true);
@@ -232,6 +248,7 @@ namespace TrafficJam.UI
 
             if (pauseGameOnLevelUpReady)
             {
+                // tr: Oyun dursun ama LEVEL UP pulse animasyonu devam etsin (DOTween unscaled update).
                 _savedTimeScale = Time.timeScale;
                 Time.timeScale = 0f;
             }
@@ -239,6 +256,7 @@ namespace TrafficJam.UI
 
         private void HandleLevelProgressConsumed()
         {
+            // tr: LEVEL UP'a basıldı -> butonu kapat, timeScale'i geri al ve panelleri yeniden senkronize et.
             if (levelUpButtonRoot != null)
             {
                 levelUpButtonRoot.transform.DOKill();

@@ -241,4 +241,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Gameplay.CarAgent
   carData: {fileID: 11400000, guid: 328315878ba866d4bb57276adb922214, type: 2}
   highlightIndicator: {fileID: 4081548957423685205}
-  highlightScaleMultiplier: 1.6
+  highlightScaleMultiplier: 3
