@@ -251,7 +251,7 @@ namespace TrafficJam.Gameplay
             activeCarsOnRoad.Clear();
         }
 
-        private void HandleCarMerged(int newTierIndex)
+        private void HandleCarMerged(int newTierIndex, Vector3 mergePos)
         {
             // tr: İleride birleşen araçların listeden çıkarılması burada yapılacak.
         }

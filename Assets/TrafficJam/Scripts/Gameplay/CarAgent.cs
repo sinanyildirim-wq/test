@@ -102,8 +102,9 @@ namespace TrafficJam.Gameplay
         {
             Transform target = waypoints[currentWaypointIndex];
 
+            float currentSpeed = carData.baseSpeed * TrafficJam.Core.UpgradeManager.Instance.SpeedMultiplier;
             transform.position = Vector3.MoveTowards(
-                transform.position, target.position, carData.baseSpeed * Time.deltaTime);
+                transform.position, target.position, currentSpeed * Time.deltaTime);
 
             Vector3 direction = (target.position - transform.position).normalized;
             if (direction != Vector3.zero)
@@ -126,7 +127,7 @@ namespace TrafficJam.Gameplay
         private void CompleteLap()
         {
             // tr: Tur tamamlandı: oyuncuya para kazandır.
-            EventManager.OnCarCompletedLap?.Invoke(carData.incomePerLap);
+            EventManager.OnCarCompletedLap?.Invoke(carData.incomePerLap, transform.position);
 
             // tr: Aktif araç listesinden çıkar ve havuza geri gönder.
             if (TrafficManager.Instance != null)

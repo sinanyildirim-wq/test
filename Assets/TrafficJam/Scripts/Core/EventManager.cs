@@ -10,8 +10,8 @@ namespace TrafficJam.Core
     {
         public static Action<GameObject> OnCarSpawned;
         public static Action<int, int> OnMoneyChanged;
-        public static Action<int> OnCarMerged;
-        public static Action<int> OnCarCompletedLap;
+        public static Action<int, Vector3> OnCarMerged;
+        public static Action<int, Vector3> OnCarCompletedLap;
         public static Action<int, GameObject> OnDragStarted;
         public static Action OnDragEnded;
         public static Action<GameState> OnGameStateChanged;

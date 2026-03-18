@@ -30,11 +30,11 @@ namespace TrafficJam.Gameplay
         private void OnEnable()
         {
             // tr: Araç tur tamamlayınca CarAgent -> EventManager.OnCarCompletedLap tetikler.
-            // tr: Burada onu AddMoney'e bağlarız.
+            // tr: Burada onu HandleCarCompletedLap'e bağlarız.
             if (EventManager.OnCarCompletedLap != null)
-                EventManager.OnCarCompletedLap += AddMoney;
+                EventManager.OnCarCompletedLap += HandleCarCompletedLap;
             else
-                EventManager.OnCarCompletedLap = AddMoney; // tr: null check
+                EventManager.OnCarCompletedLap = HandleCarCompletedLap; // tr: null check
         }
 
         private void OnDisable()
@@ -42,8 +42,15 @@ namespace TrafficJam.Gameplay
             // tr: Memory leak olmaması için OnDisable'da abonelikten çıkılır.
             if (EventManager.OnCarCompletedLap != null)
             {
-                EventManager.OnCarCompletedLap -= AddMoney;
+                EventManager.OnCarCompletedLap -= HandleCarCompletedLap;
             }
+        }
+
+        // tr: Araç turu tamamlandığında devreye girer. Upgrade çarpanını uygular.
+        private void HandleCarCompletedLap(int baseIncome, Vector3 carPosition)
+        {
+            int finalIncome = Mathf.RoundToInt(baseIncome * UpgradeManager.Instance.IncomeMultiplier);
+            AddMoney(finalIncome);
         }
 
         // tr: Bakiye arttırma metodu. Aracın turun tamamlaması (veya reklamlardan gelir) gibi durumlarda çağrılır.

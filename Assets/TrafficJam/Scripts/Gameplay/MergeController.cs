@@ -188,7 +188,7 @@ namespace TrafficJam.Gameplay
                 // tr: Yeni araç da yolda sayılsın (kapasite/spawn hesabı için).
                 if (TrafficManager.Instance != null)
                     TrafficManager.Instance.AddCarToActive(newCar);
-                EventManager.OnCarMerged?.Invoke(nextTier);
+                EventManager.OnCarMerged?.Invoke(nextTier, spawnPos);
             }
             else
             {

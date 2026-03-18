@@ -62,7 +62,7 @@ namespace TrafficJam.Core
             ResetProgress();
         }
 
-        private void HandleCarMerged(int newTierIndex)
+        private void HandleCarMerged(int newTierIndex, Vector3 mergePos)
         {
             // tr: Merge, opsiyonel bonus progress verir (para tabanlı hedefi bozmaz).
             if (progressBonusPerMerge > 0f)
