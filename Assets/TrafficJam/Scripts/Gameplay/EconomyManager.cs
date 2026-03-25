@@ -15,6 +15,7 @@ namespace TrafficJam.Gameplay
         [Header("Economy Status")]
         // tr: Oyuncunun anlık sahip olduğu toplam para. Inspector'dan takip edilebilir.
         [SerializeField] private int currentMoney = 0;
+        public int CurrentMoney => currentMoney; // tr: SaveManager'ın okuyabilmesi için public getter.
 
         private void Awake()
         {
@@ -31,19 +32,14 @@ namespace TrafficJam.Gameplay
         {
             // tr: Araç tur tamamlayınca CarAgent -> EventManager.OnCarCompletedLap tetikler.
             // tr: Burada onu HandleCarCompletedLap'e bağlarız.
-            if (EventManager.OnCarCompletedLap != null)
-                EventManager.OnCarCompletedLap += HandleCarCompletedLap;
-            else
-                EventManager.OnCarCompletedLap = HandleCarCompletedLap; // tr: null check
+            // tr: Not: += operatörü null delegate'lerde de güvenlidir; '=' ataması diğer abonelikleri siler!
+            EventManager.OnCarCompletedLap += HandleCarCompletedLap;
         }
 
         private void OnDisable()
         {
             // tr: Memory leak olmaması için OnDisable'da abonelikten çıkılır.
-            if (EventManager.OnCarCompletedLap != null)
-            {
-                EventManager.OnCarCompletedLap -= HandleCarCompletedLap;
-            }
+            EventManager.OnCarCompletedLap -= HandleCarCompletedLap;
         }
 
         // tr: Araç turu tamamlandığında devreye girer. Upgrade çarpanını uygular.

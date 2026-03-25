@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TrafficJam.Data;
 using TrafficJam.Gameplay;
+using DG.Tweening;
 
 namespace TrafficJam.Core
 {
@@ -158,7 +159,9 @@ namespace TrafficJam.Core
             CurrentLevelData = levelToLoad;
             Debug.Log($"[LevelManager] CurrentLevelData set. level={levelToLoad.currentLevel}, maxCarCapacity={levelToLoad.maxCarCapacity}, upgradeCost={levelToLoad.upgradeCost}");
 
-            // tr: Rota hazır, level yüklendi sinyali gönder.
+            // tr: Eski manuel LevelManager kamera animasyonu kaldırıldı, görev CameraController.cs'te!
+
+            // tr: Rota hazır, level yüklendi sinyali gönder (CameraController Auto-Framing için bu event'i dinleyecek).
             EventManager.OnLevelLoaded?.Invoke();
         }
 

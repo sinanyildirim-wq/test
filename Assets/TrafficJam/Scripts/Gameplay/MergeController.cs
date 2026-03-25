@@ -89,7 +89,11 @@ namespace TrafficJam.Gameplay
             {
                 Vector3 hitPoint = ray.GetPoint(entry);
                 Vector3 newPos = hitPoint + dragOffset;
-                newPos.y = dragHeight;
+                
+                // tr: Sabit dragHeight yerine, StartDragging'deki DOTween'in o karedeki Y yüksekliğini baz alıyoruz.
+                // Bu sayede araç havaya anında zıplamak (snap) yerine, o an süren kalkış animasyonunu yumuşakça uygular.
+                newPos.y = draggedObject.transform.position.y; 
+                
                 draggedObject.transform.position = newPos;
             }
         }

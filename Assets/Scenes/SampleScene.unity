@@ -1189,6 +1189,10 @@ GameObject:
   - component: {fileID: 622928286}
   - component: {fileID: 622928288}
   - component: {fileID: 622928287}
+  - component: {fileID: 622928292}
+  - component: {fileID: 622928291}
+  - component: {fileID: 622928290}
+  - component: {fileID: 622928289}
   m_Layer: 0
   m_Name: --- MANAGERS ---
   m_TagString: Untagged
@@ -1215,6 +1219,14 @@ MonoBehaviour:
     parentTransform: {fileID: 1144290196}
   - poolId: Car_Tier2
     prefab: {fileID: 5803216708819085969, guid: 6d89b1fe96cdd674eaec7edd075fdd8f, type: 3}
+    initialSize: 5
+    parentTransform: {fileID: 1144290196}
+  - poolId: VFX_Merge
+    prefab: {fileID: 7101045552605410244, guid: f0dd3636fc0db574fa371ae727f8023e, type: 3}
+    initialSize: 5
+    parentTransform: {fileID: 1144290196}
+  - poolId: VFX_FloatingText
+    prefab: {fileID: 2948525888365280773, guid: 69026930942d4194cba899d579e0ccf3, type: 3}
     initialSize: 5
     parentTransform: {fileID: 1144290196}
 --- !u!114 &622928282
@@ -1292,7 +1304,7 @@ MonoBehaviour:
   levelUpButtonRoot: {fileID: 1449633554}
   pulseLevelUpButton: 1
   pauseGameOnLevelUpReady: 1
-  levelUpPulseScale: 1.074
+  levelUpPulseScale: 1.2
   levelUpPulseDuration: 0.6
   makeGamePanelBackgroundTransparent: 1
   pausePanelOverlayAlpha: 0.6
@@ -1311,7 +1323,7 @@ MonoBehaviour:
   allLevels:
   - {fileID: 11400000, guid: 1892c2ba126aef9448edf47e5e6d61a4, type: 2}
   - {fileID: 11400000, guid: 99b337ce199ecbb448b39e878cecb4be, type: 2}
-  autoLoadOnStart: 1
+  autoLoadOnStart: 0
 --- !u!114 &622928288
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1327,6 +1339,142 @@ MonoBehaviour:
   useUpgradeCostAsTarget: 1
   progressBonusPerMerge: 0
   currentProgress: 0
+--- !u!114 &622928289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622928280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eee1be590891a9f45a4eae91bb1934d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Core.VFXManager
+--- !u!114 &622928290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622928280}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3027a0d4f158ac24e95e46010c5965ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Core.AudioManager
+  coinSound: {fileID: 0}
+  mergeSound: {fileID: 0}
+  clickSound: {fileID: 0}
+--- !u!82 &622928291
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622928280}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &622928292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 622928280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9216d670071832f43891e43229730f94, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrafficJam.Core.UpgradeManager
 --- !u!1 &636688089
 GameObject:
   m_ObjectHideFlags: 0
@@ -2208,7 +2356,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1449633555}
   m_Layer: 5
-  m_Name: GameObject
+  m_Name: LevelUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -13,5 +13,12 @@ namespace TrafficJam.Gameplay
         [Header("Route Settings")]
         [Tooltip("tr: Bu leveldeki araçların takip edeceği noktalar sırasıyla buraya eklenmeli.")]
         public List<Transform> levelWaypoints;
+
+        [Header("Camera Settings")]
+        [Tooltip("tr: Bu level yüklendiğinde kameranın gitmesi gereken pozisyon ve rotasyon")]
+        public Transform levelCameraAnchor;
+        
+        [Tooltip("tr: Bu level için kameranın Orthographic boyutu veya Field of View değeri (Zoom)")]
+        public float levelCameraZoom = 60f;
     }
 }

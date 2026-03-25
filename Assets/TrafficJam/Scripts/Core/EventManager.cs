@@ -23,6 +23,9 @@ namespace TrafficJam.Core
         public static Action OnLevelProgressReady; // tr: Bar doldu, "LEVEL UP" butonu gösterilebilir.
         public static Action OnLevelProgressConsumed; // tr: Level up'a basıldı; bar resetlendi.
 
+        // tr: Phase 4 - Çevrimdışı kazanç hesaplandığında UI popup için tetiklenir. Parametre: kazanılan miktar.
+        public static Action<int> OnOfflineEarningsCalculated;
+
         public static void ClearAllEvents()
         {
             // tr: Statik event'leri sıfırlayarak "ghost listener" (eski sahneden kalan aboneler) riskini azaltır.
@@ -37,6 +40,7 @@ namespace TrafficJam.Core
             OnLevelProgressChanged = null;
             OnLevelProgressReady = null;
             OnLevelProgressConsumed = null;
+            OnOfflineEarningsCalculated = null;
         }
     }
 }
