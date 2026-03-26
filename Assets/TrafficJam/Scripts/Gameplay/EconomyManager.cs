@@ -122,5 +122,15 @@ namespace TrafficJam.Gameplay
             LevelManager.Instance.LoadNextLevel();
             return true;
         }
+
+        // tr: Yeni level başladığında parayı sıfırlar (Soft Reset).
+        // tr: LevelManager.LoadNextLevel() tarafından çağrılır.
+        public void ResetMoney()
+        {
+            currentMoney = 0;
+            Debug.Log("[EconomyManager] tr: Para sıfırlandı (Soft Reset). Yeni level başlıyor.");
+            // tr: UI'ın sıfırlanmış bakiyeyi göstermesi için event tetiklenir.
+            EventManager.OnMoneyChanged?.Invoke(0, currentMoney);
+        }
     }
 }

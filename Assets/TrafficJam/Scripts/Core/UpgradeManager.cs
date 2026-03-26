@@ -66,5 +66,17 @@ namespace TrafficJam.Core
             SpeedLevel++;
             Debug.Log($"[UpgradeManager] tr: Hız seviyesi → {SpeedLevel}  | Çarpan: {SpeedMultiplier:F2}x");
         }
+
+        // tr: Yeni level başladığında tüm yükseltmeleri sıfırlar (Soft Reset).
+        // tr: LevelManager.LoadNextLevel() tarafından çağrılır.
+        public void ResetUpgrades()
+        {
+            IncomeLevel = 1;
+            SpeedLevel  = 1;
+            // tr: IncomeMultiplier ve SpeedMultiplier expression-body property olduğundan
+            // tr: seviyeler 1 yapılınca çarpanlar otomatik 1.0f'e döner (hesaplama gerekmez).
+            Debug.Log($"[UpgradeManager] tr: Yükseltmeler sıfırlandı (Soft Reset). " +
+                      $"Gelir Çarpanı: {IncomeMultiplier:F2}x, Hız Çarpanı: {SpeedMultiplier:F2}x");
+        }
     }
 }

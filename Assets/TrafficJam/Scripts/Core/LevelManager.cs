@@ -170,6 +170,17 @@ namespace TrafficJam.Core
             if (currentLevelIndex + 1 < allLevels.Count)
             {
                 currentLevelIndex++;
+                Debug.Log($"[LevelManager] tr: Yeni level'e geçiliyor ({currentLevelIndex}). Soft Reset başlatılıyor...");
+
+                // tr: 1) Parayı sıfırla — oyuncu eski parayı yeni levele taşımasın.
+                EconomyManager.Instance.ResetMoney();
+
+                // tr: 2) Dükkan yükseltmelerini sıfırla — çarpanlar 1.0f'e döner.
+                UpgradeManager.Instance.ResetUpgrades();
+
+                // tr: 3) Hemen kaydet — oyuncu çık/gir döngüsüyle eski parayı geri almasın.
+                SaveManager.Instance.SaveGame();
+
                 LoadLevel(currentLevelIndex);
             }
         }
